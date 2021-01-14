@@ -1,0 +1,227 @@
+---
+title: "SQL Queries on generic SQL Server"
+author: "Alessandro Speranza"
+date: "10/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cash = TRUE)
+```
+
+```{r, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(funModeling)
+library(janitor)
+library(readxl)
+library(RODBC)
+library(tictoc)
+```
+
+## DB Connections
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# DEV
+DEV_InterSTGDB_dbConnection <- "Driver={SQL Server};Server=SSIS-SRV;Database=InterSTGDB;Trusted_Connection=yes"
+DEV_InterSTGDB_channel <- odbcDriverConnect(DEV_InterSTGDB_dbConnection)
+
+DEV_InterDW_dbConnection <- "Driver={SQL Server};Server=SSIS-SRV;Database=InterDW;Trusted_Connection=yes"
+DEV_InterDW_channel <- odbcDriverConnect(DEV_InterDW_dbConnection)
+```
+
+# Country LOV investigation
+
+```{r}
+# EBooks/Countries LOV Data
+LOV_Countries <- read_excel("C:/Interamerican/07. Projects/Electronic Books (e-books)/ETL/LOVs - Country/Countries.xlsx")
+```
+
+```{r}
+# Differences 
+differences <- setdiff(countries_db$Country, LOV_Countries$Value)
+
+differences
+```
+
+```{r}
+status(countries_db)
+```
+
+# Ebooks - TaxesTotal
+
+```{r}
+TaxesTotal_old <- sqlQuery(DEV_InterSTGDB_channel, "select * from ebooks.TaxesTotal
+                           order by InvoiceID", as.is=c(TRUE, FALSE)
+)
+
+TaxesTotal_old <- TaxesTotal_old %>% 
+  select (- DateInserted) %>% 
+  arrange(InvoiceID)
+```
+
+```{r}
+TaxesTotal_new <- sqlQuery(DEV_InterSTGDB_channel, "select * from ebooks.TaxesTotal
+                           order by InvoiceID", as.is=c(TRUE, FALSE)
+)
+
+TaxesTotal_new <- TaxesTotal_new %>% 
+  select (- DateInserted) %>% 
+  arrange(InvoiceID)
+```
+
+```{r}
+identical(TaxesTotal_old, TaxesTotal_new)
+```
+
+# Ebooks - Check for duplicates in InvoiceRow
+
+```{r}
+InvoiceRow <- sqlQuery(DEV_InterSTGDB_channel, "select * from ebooks.InvoiceRow", as.is=c(TRUE, FALSE))
+
+InvoiceRow_dupes <- sqlQuery(DEV_InterSTGDB_channel, "select * from ebooks.InvoiceRow", as.is=c(TRUE, FALSE)) %>% 
+janitor::get_dupes()  
+```
+
+
+# Ebooks - Check for duplicates in LedgerOriginMapping
+
+```{r}
+LedgerOriginMapping <- sqlQuery(DEV_InterSTGDB_channel, "select * from ebooks.LedgerOriginMapping", as.is=c(TRUE, FALSE))
+```
+
+
+```{r}
+LedgerOriginMapping_dupes <- sqlQuery(DEV_InterSTGDB_channel, "select * from ebooks.LedgerOriginMapping", as.is=c(TRUE, FALSE)) %>% 
+janitor::get_dupes()  
+```
+
+# Ebooks - Check differences Invoice - IncomeClassificationRow
+
+```{r}
+Dimcustomer <- sqlQuery(DEV_InterDW_channel, "select * from dbo.DimCustomers", as.is=c(TRUE, FALSE))
+```
+
+# Ebooks - Customers orphans
+
+```{r}
+policyid_20201217 <- sqlQuery(DEV_InterDW_channel, "select distinct policyID from FactLedger
+where len(SourceCustomerID) = 6
+and IssueDate = '2020-12-17' 
+order by policyID", as.is=c(TRUE, FALSE)
+)
+
+policyid_20201218 <- sqlQuery(DEV_InterDW_channel, "select distinct policyID from FactLedger
+where len(SourceCustomerID) = 6
+and IssueDate = '2020-12-18' 
+order by policyID", as.is=c(TRUE, FALSE)
+)
+
+common <- intersect(policyid_20201217$policyID
+                   ,policyid_20201218$policyID)
+```
+
+```{r}
+ebooks <- sqlQuery(DEV_InterSTGDB_channel, "WITH payments AS (  
+SELECT CONCAT(substring(PolicyRegionID, 8, 10), LedgerNo) InvoiceID      
+      ,LEFT(CompanyBranchKey, 1) CompanyID 
+	  ,RIGHT(Dimpayments.CompanyBranchKey, 1) Branch
+	  ,CompanyBranchKey      
+	  ,PaymentID      
+	  ,PolicyRegionID       
+	  ,right(policyID, 10) + right('0000000000' + cast(LedgerNo AS VARCHAR(10)), 10) Aa     
+	  ,IssueDate      
+	  ,LedgerOriginID
+	  ,LedgerOriginCodeDescription
+FROM interDW..Dimpayments WITH (index=ebooks1)  
+WHERE LEFT(CompanyBranchKey,1) IN ('1','2')
+AND IssueDate >= '2020-12-21'
+),
+ledger AS (  
+SELECT convert(varchar(100), SourceCustomerID) SourceCustomerID 
+      ,CompanyBranchKey     
+      ,PolicyRegionID
+	  ,PolicyID
+      ,PaymentID     
+      ,CoverNet     
+      ,CoverFee1
+      ,CoverFee2
+      ,CoverLoanInterest     
+      ,CoverTax1     
+      ,CoverTax2
+      ,CoverSTAMP
+      ,CoverTEO
+      ,CoverEPIK
+	  ,CoverTOTAL
+FROM interDW..FactLedger WITH (index=ebooks1)
+),  
+customers AS (  
+SELECT CustomerID     
+      ,Fiscal VATNumber     
+      ,CustomerName Name     
+      ,ZipCode     
+      ,City
+      ,Country
+	  ,CustomerTypeID
+      ,CompanyBranchKey     
+      ,SourceCustomerID     
+      ,CustomerStatus
+FROM interDW..DimCustomers WITH (index=ebooks1) 
+WHERE CustomerStatus = 'Active'
+),
+LedgerOriginMapping AS (
+SELECT LedgerOriginCodeDescription
+      ,CustomerTypeID
+	  ,IncomeClassificationAmountID
+	  ,SendingFlag
+FROM ebooks.LedgerOriginMapping WITH (index=LedgerOriginMapping_pk)
+),
+policy_new AS (
+SELECT PaymentTypeDescription
+      ,PolicyRegionID
+FROM interDW..DimPolicyNew
+)
+SELECT DISTINCT payments.CompanyBranchKey
+/*payments.InvoiceID 
+      ,payments.CompanyBranchKey
+      ,payments.CompanyID 
+	  ,payments.Branch 
+      ,payments.PaymentID     
+      ,payments.PolicyRegionID      
+      ,CASE WHEN customers.CustomerTypeID = 2 
+	        THEN payments.Aa
+       ELSE NULL
+       END as Aa	   
+      ,payments.IssueDate     
+      ,payments.LedgerOriginID
+	  ,payments.LedgerOriginCodeDescription
+	  ,CASE WHEN policy_new.PaymentTypeDescription = '' THEN 'Credit' ELSE policy_new.PaymentTypeDescription END PaymentTypeDescription
+     -- ,Ledger.CoverTOTAL PaymentMethodAmount OLD calculation until 11/12/2020
+	  ,(Ledger.CoverNet + Ledger.CoverLoanInterest) PaymentMethodAmount -- NEW calculation since 11/12/2020
+      ,'00' Series	  
+      ,convert(decimal(20,8), Ledger.CoverNet) NetValue   
+      ,7 VATCategoryID  
+      ,convert(decimal(20,8),0) VATAmount
+      ,convert(varchar(100), Ledger.SourceCustomerID) SourceCustomerID
+	  ,customers.CustomerID -- Added for testing purpose ONLY (tracker) 15/12/2020	  
+      ,customers.VATNumber  
+      ,customers.Country 
+	  ,customers.CustomerTypeID
+      ,left(rtrim(customers.Name), 50) Name 
+      ,left(rtrim(customers.ZipCode),10) PostalCode  
+      ,customers.City  
+      ,Ledger.CoverLoanInterest	  
+      ,(Ledger.CoverTax1 + Ledger.CoverTax2 + Ledger.CoverTEO + Ledger.CoverEPIK) TaxAmount1 
+	  ,Ledger.CoverSTAMP TaxAmount2 */
+FROM payments JOIN Ledger WITH (index=ebooks1) ON Ledger.CompanyBranchKey = Payments.CompanyBranchKey             
+                                              AND Ledger.PaymentID = Payments.PaymentID             
+                                              AND Ledger.PolicyRegionID = Payments.PolicyRegionID  
+			  JOIN customers WITH (index=ebooks2) on customers.CompanyBranchKey = Ledger.CompanyBranchKey              
+                                                  AND customers.SourceCustomerID = Ledger.SourceCustomerID      
+              JOIN policy_new WITH (index=ebooks1) on policy_new.PolicyRegionID = Payments.PolicyRegionID
+			  JOIN LedgerOriginMapping WITH (index=LedgerOriginMapping_pk) ON LedgerOriginMapping.LedgerOriginCodeDescription = payments.LedgerOriginCodeDescription
+                                      AND LedgerOriginMapping.CustomerTypeID = customers.CustomerTypeID
+						              AND LedgerOriginMapping.IncomeClassificationAmountID = 1
+									  AND LedgerOriginMapping.SendingFlag = 1", as.is=c(TRUE, FALSE)
+)
+```
+
