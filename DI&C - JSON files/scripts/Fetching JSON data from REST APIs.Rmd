@@ -1,0 +1,113 @@
+---
+title: "Fetching JSON data from REST APIs"
+author: "Alessandro Speranza"
+date: "1/12/2021"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cash = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rjson)
+library(tibble)
+library(DT)
+```
+
+<br>
+
+# Convert JSON URLs to R Data Frame
+
+## Data Import from JSON files
+First step is converting JSON files (raw data) to lists (in these case nested lists). 
+
+```{r, load_data}
+data536 <- rjson::fromJSON(file="https://api.musement.com/api/v3/events/536.json")
+data537 <- rjson::fromJSON(file="https://api.musement.com/api/v3/events/537.json")
+data543 <- rjson::fromJSON(file="https://api.musement.com/api/v3/events/543.json")
+data512 <- rjson::fromJSON(file="https://api.musement.com/api/v3/events/512.json")
+#data285 <- rjson::fromJSON(file="https://api.musement.com/api/v3/events/285.json")
+```
+The last JSON file (285) is commented because is not accessible from the browser with the error:  
+**{"code":"0","message":"You don't have permission to access this resource."}**
+
+<br>
+
+## Unlisting data from nested lists
+After having created the four lists, for each list I retrieved the following info:
+
+* **event title**
+* **event price**
+* **number of reviews**
+<br>
+
+```{r, unlisting_data}
+# Dataset 536
+data536_title <- unlist(data536[["title"]])
+data536_price <- unlist(data536[["retail_price"]][["formatted_value"]])
+data536_reviews_number <- unlist(data536[["reviews_number"]])
+
+# Dataset 537
+data537_title <- unlist(data537[["title"]])
+data537_price <- unlist(data537[["retail_price"]][["formatted_value"]])
+data537_reviews_number <- unlist(data537[["reviews_number"]])
+
+# Dataset 543
+data543_title <- unlist(data543[["title"]])
+data543_price <- unlist(data543[["retail_price"]][["formatted_value"]])
+data543_reviews_number <- unlist(data543[["reviews_number"]])
+
+# Dataset 512
+data512_title <- unlist(data512[["title"]])
+data512_price <- unlist(data512[["retail_price"]][["formatted_value"]])
+data512_reviews_number <- unlist(data512[["reviews_number"]])
+```
+
+<br>
+
+## Creating the final data frame
+As final step, I created a data frame which collects the data in a tidy format.
+
+```{r, create_final_dataset}
+final_dataset <- tribble(
+  ~id, ~title, ~price, ~reviews,
+  "536", data536_title, data536_price, data536_reviews_number,
+  "537", data537_title, data537_price, data537_reviews_number,
+  "543", data543_title, data543_price, data543_reviews_number,
+  "512", data512_title, data512_price, data512_reviews_number
+)
+
+## Export the final_dataset on file system using readr package 
+write_csv(final_dataset, "final_dataset.csv")
+```
+
+<br>
+
+## Displaying & Exporting data
+
+```{r, displaying_data, echo = FALSE, message = FALSE, warning = FALSE}
+ sketch <- htmltools::withTags(table(
+   tableHeader(colnames(final_dataset))
+ ))
+
+ DT::datatable(final_dataset,
+               extensions = c('KeyTable','Buttons','Scroller','ColReorder'),
+               container = sketch,
+               options = list(dom = 'Bfrtip',
+                              buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                              deferRender = TRUE,
+                              scrollY = 420,
+                              scroller = TRUE,
+                              colReorder = TRUE,
+                              keys = TRUE),
+               rownames = FALSE,
+               filter = list(position = 'top', clear = FALSE, plain = TRUE)
+ )
+```
