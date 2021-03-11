@@ -1,0 +1,69 @@
+---
+title: "Data retrieval using youtubeAnalyticsR package"
+author: "Aless"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<https://rdrr.io/github/MarkEdmondson1234/youtubeAnalyticsR/man/yt_analytics.html>
+
+```{r}
+library(tidyverse)
+library(youtubeAnalyticsR)
+library(plotly)
+```
+
+# YouTube Analytics and Reporting APIs Authentication
+```{r}
+options(googleAuthR.client_id = "311472921616-i4e4lhb60sdn18i0tvbjcsveppevcju4.apps.googleusercontent.com")
+options(googleAuthR.client_secret = "ynWLz2HYInU3u92YYFKOovIT")
+
+# YouTube Analytics API option
+options(googleAuthR.scopes.selected = "https://www.googleapis.com/auth/yt-analytics.readonly")
+
+#Permission from a user who has access to the YouTube channel you want to analyze
+googleAuthR::gar_auth()
+```
+
+# YouTube Analytics API real-time targeted queries
+```{r}
+channel_analytics_day <- yt_analytics("UC6CV_32l8omBfcliOOQnIew", 
+                   start.date = "2015-01-01", end.date = "2021-03-01", 
+                   metrics = c("views","comments","likes","dislikes"), dimensions = "day") 
+
+channel_analytics_month <- yt_analytics("UC6CV_32l8omBfcliOOQnIew", 
+                   start.date = "2015-01-01", end.date = "2021-03-01", 
+                   metrics = c("views","comments","likes","dislikes"), dimensions = "month")
+  
+#channel_analytics_month$month <- lubridate::as_date(as_character(channel_analytics_month$month, format )                 
+glimpse(channel_analytics_day)
+glimpse(channel_analytics_month)
+
+  ggplot(channel_analytics_day, aes(x = day, y = views)) +
+  geom_line()
+  
+  ggplotly(ggplot(channel_analytics_day, aes(x = day, y = views)) +
+  geom_line())
+  
+  ggplotly(ggplot(channel_analytics_month, aes(x = month, y = views)) +
+  geom_line()) # modificare il datatype di month: da chr a date, altrimenti non funziona 
+```
+
+```{r}
+channel_analytics_day <- yt_analytics(id = "UC6CV_32l8omBfcliOOQnIew", 
+                   start.date = "2015-01-01", end.date = "2021-03-01", 
+                   metrics = c("views","estimatedMinutesWatched"), dimensions = "day", sort = "day")
+
+channel_analytics_day <- yt_analytics(id = "UC6CV_32l8omBfcliOOQnIew", 
+                   start.date = "2015-01-01", end.date = "2021-03-01", 
+                   metrics = c("views","estimatedMinutesWatched","averageViewDuration","averageViewPercentage","subscribersGained"), dimensions = "country", sort = "views")
+
+channel_analytics_day <- yt_analytics(id = "UC6CV_32l8omBfcliOOQnIew", 
+                   start.date = "2015-01-01", end.date = "2021-03-01", 
+                   metrics = c("viewerPercentage"), dimensions = "ageGroup", sort = "ageGroup")
+```
+

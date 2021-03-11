@@ -1,0 +1,51 @@
+**** YOUTUBE DATA RETRIEVAL ANALYSIS ****
+
+--------------------------------------------------
+Tuber - - Usa la YouTube Data API
+
+Con questo package riesco a tirare giu dati in tempo reale (NON storici) a livello di
+
+1. canale
+2. playlist
+3. video
+
+ma sono solo una restrizione (viste, commenti, etc) di quello che ho su YouTube Studio
+
+IMPORTANTE! Riesco ad evidenziare nomi, descrizioni, etc
+
+
+--------------------------------------------------
+youtubeAnalyticsR package - Usa le YouTube Analytics and Reporting APIs (not YouTube Data API)
+
+youtubeAnalyticsR e' come tuber (usa le YouTube Analytics and Reporting APIs), ma funziona
+Al momento riesco ad ottenere dati anche storici (day, month) ma SOLO a livello di canale (non di playlist o video)
+
+Per ora riesco a creare real-time targeted queries usando la YouTube Analytics API
+Non ho ancora capito come creare bulk reports usando la YouTube Reporting API
+
+IMPORTANTE! NON riesco ad evidenziare nomi, descrizioni, etc
+
+
+--------------------------------------------------
+Youtube Data API v3 -- LAST UNDER INVESTIGATION
+
+Con la mia chiave posso vedere NON solo il mio canale ma anche altri canali!!!
+https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=UCeLHszkByNZtPKcaVXOCOQQ&fields=items(contentDetails%2Cid%2Csnippet(country%2Cdescription%2Ctitle)%2Cstatistics%2Cstatus)%2CnextPageToken%2CpageInfo%2CprevPageToken%2CtokenPagination&key=AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs 
+
+IMPORTANTE! Riesco ad evidenziare nomi, descrizioni, etc
+
+ΑΤΤΕΝΖΙΟΝΕ! Questa API supporta anche OAuth 2.0
+
+
+--------------------------------------------------
+YouTube Analytics and Reporting APIs - Uso la direttamente la function httr::GET
+
+IMPORTANTE! NON riesco ad evidenziare nomi, descrizioni, etc
+
+
+--> X DOMANI 
+Vedere se riesco a tirare fuori anche dati storici da Youtube Data API v3
+ΑΤΤΕΝΖΙΟΝΕ! Questa API supporta anche OAuth 2.0, per cui provare usando questa sola autenticazione a fondere info della Analytics API
+
+Trovare anche il file con gli esempi di tuber su quello che si puo' fare
+D:\PC3\Operation Ultra\09 - R\18 - Blog, Practice & Projects\Data Import & Converting (DI&C)\YouTube Data\Using tuber package\scripts\tuber functions examples.R

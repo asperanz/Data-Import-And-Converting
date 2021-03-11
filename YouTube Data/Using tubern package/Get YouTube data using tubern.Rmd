@@ -1,0 +1,30 @@
+---
+title: "Get YouTube data using tubern package"
+author: "Alessandro Speranza"
+date: "02/16/2021"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cash = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tubern)
+```
+
+# Authentication
+```{r}
+yt_oauth(app_id = "311472921616-i4e4lhb60sdn18i0tvbjcsveppevcju4.apps.googleusercontent.com", app_secret = "ynWLz2HYInU3u92YYFKOovIT", scope = "analytics")
+```
+
+```{r}
+req_youtube <- get_report(ids = "channel==MINE", metrics = "views", start_date = "2015-01-01", end_date ="2021-03-01")
+```
+

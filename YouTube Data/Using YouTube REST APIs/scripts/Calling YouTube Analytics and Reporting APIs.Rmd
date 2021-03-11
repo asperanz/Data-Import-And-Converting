@@ -1,0 +1,67 @@
+---
+title: "Calling YouTube Analytics and Reporting APIs"
+author: "Alessandro Speranza"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cash = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(httr)
+library(tidyverse)
+library(plotly)
+library(jsonlite)
+library(janitor)
+library(here)
+```
+
+# Authorization
+```{r}
+endpoints <- oauth_endpoints("google")
+
+myapp <- oauth_app("dead-dogs-analytics-yt",
+                   key = "311472921616-i4e4lhb60sdn18i0tvbjcsveppevcju4.apps.googleusercontent.com",
+                   secret = "ynWLz2HYInU3u92YYFKOovIT"
+)
+
+youtube_token <- oauth2.0_token(endpoints, myapp, scope = "https://www.googleapis.com/auth/yt-analytics.readonly")
+```
+
+# API Call
+```{r}
+# start_date <- "2015-01-01"
+# end_date <- "2021-03-01"
+
+request <- "https://youtubeanalytics.googleapis.com/v2/reports?dimensions=video&metrics=views&maxResults=50&sort=-views&startDate=2015-01-01&endDate=2021-03-01&ids=channel==MINE"
+
+# Whole Lotta Shakin' Goin' On
+request <- "https://youtubeanalytics.googleapis.com/v2/reports?dimensions=day,video&metrics=views&filters=video==rZfCO3Jxb5E&maxResults=500&sort=-day&startDate=2015-01-01&endDate=2021-03-01&ids=channel==MINE"
+
+req_youtube <- GET(request, config(token = youtube_token))
+
+youtube_text <- content(req_youtube, "text", encoding="UTF-8")
+
+youtube_json <- fromJSON(youtube_text, flatten = TRUE)
+
+df <- as.data.frame(youtube_json[["rows"]]) %>% 
+  arrange(V1)
+```
+
+```{r}
+glimpse(df)
+
+df2 <- df %>% 
+  mutate(V1 = as.Date(V1), # vedere la funzione analoga di lubridate
+    V3 = as.integer(V3))
+
+glimpse(df2)
+```
+
+```{r}
+ggplotly(ggplot(df2, aes(x = V1, V3)) +
+  geom_line())
+```
+

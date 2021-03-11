@@ -1,0 +1,232 @@
+---
+title: "Calling YouTube Data API"
+author: "Alessandro Speranza"
+date: "01/20/2021"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cash = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(janitor)
+library(jsonlite)
+library(httr)
+library(here)
+```
+
+# get_channels
+```{r}
+# Define all parameters
+base <- "https://www.googleapis.com/youtube/v3/"
+key <-  "AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs"
+resource_type <- "channels"
+filter <- "id"
+filter_id <- "UC6CV_32l8omBfcliOOQnIew"
+part <- "snippet,contentDetails,statistics"
+# part <- "contentDetails"
+# part <- "id"
+# part <- "localizations"
+# part <- "player"
+# part <- "snippet"
+# part <- "status"
+topn <- 15
+
+# Function get_channel_playlists
+get_channels <- function(base, key, filter, filter_id, part, topn) {
+  
+api_params <- 
+str_c(str_glue("key=", key), 
+               str_glue(filter, filter_id, .sep = "="),
+               str_glue("part=", part),
+               str_glue("maxResults=", topn),
+               sep = "&")
+
+api_call <- paste0(base, resource_type, "?", api_params)
+
+api_result <- httr::GET(api_call)
+
+json_result <- httr::content(api_result, "text", encoding="UTF-8")
+
+# Process the raw data into a data frame
+json <- fromJSON(json_result, flatten = T)  # vedere se esiste il flatten anche con il package rjson
+as.data.frame(json)
+  
+}
+
+channels <- get_channels(base, key, filter, filter_id, part, topn) %>% 
+  janitor::clean_names()
+```
+
+# get_playlists
+```{r}
+# Define all parameters
+base <- "https://www.googleapis.com/youtube/v3/"
+key <-  "AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs"
+resource_type <- "playlists"
+filter <- "channelId"
+filter_id <- "UC6CV_32l8omBfcliOOQnIew"  # Alessandro Speranza Channel ID
+part <- "snippet,contentDetails,player,status"
+# part <- "contentDetails"
+# part <- "id"
+# part <- "localizations"
+# part <- "player"
+# part <- "snippet"
+# part <- "status"
+topn <- 15
+
+# Function get_channel_playlists
+get_playlists <- function(base, key, filter, filter_id, part, topn) {
+  
+api_params <- 
+str_c(str_glue("key=", key), 
+               str_glue(filter, filter_id, .sep = "="),
+               str_glue("part=", part),
+               str_glue("maxResults=", topn),
+               sep = "&")
+
+api_call <- paste0(base, resource_type, "?", api_params)
+
+api_result <- httr::GET(api_call)
+
+json_result <- httr::content(api_result, "text", encoding="UTF-8")
+
+# Process the raw data into a data frame
+json <- fromJSON(json_result, flatten = T)  # vedere se esiste il flatten anche con il package rjson
+as.data.frame(json)
+  
+}
+
+playlists <- get_playlists(base, key, filter, filter_id, part, topn) %>% 
+  janitor::clean_names()
+```
+
+# get_playlistItems
+```{r}
+# Define all parameters
+base <- "https://www.googleapis.com/youtube/v3/"
+key <-  "AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs"
+resource_type <- "playlistItems"
+filter <- "playlistId"
+filter_id <- "PLhIw1_0YGPETya3CXmcudNLE0edFQ3307"  # creare una variabile che contiene tutti i playlistId e usare purrr::map_df per passarla
+part <- "snippet,status"
+# part <- "contentDetails"
+# part <- "id"
+# part <- "snippet"
+# part <- "status"
+topn <- 50
+
+# Function get_channel_playlists
+get_playlistItems <- function(base, key, filter, filter_id, part, topn) {
+  
+api_params <- 
+str_c(str_glue("key=", key), 
+               str_glue(filter, filter_id, .sep = "="),
+               str_glue("part=", part),
+               str_glue("maxResults=", topn),
+               sep = "&")
+
+api_call <- paste0(base, resource_type, "?", api_params)
+
+api_result <- httr::GET(api_call)
+
+json_result <- httr::content(api_result, "text", encoding="UTF-8")
+
+# Process the raw data into a data frame
+json <- fromJSON(json_result, flatten = T)  # vedere se esiste il flatten anche con il package rjson
+as.data.frame(json)
+  
+}
+
+playlistItems <- get_playlistItems(base, key, filter, filter_id, part, topn) %>% 
+  janitor::clean_names()
+
+
+playlistItems_v <- playlistItems %>% 
+  dplyr::pull(items_snippet_resource_id_video_id)
+
+# Join multiple vector strings into a single string  --->>> IMPORTANTISSIMO PER PASSARE
+videos_to_analyze <- str_c(playlistItems_v, collapse = ",")
+```
+
+# get_videos
+```{r}
+# Define all parameters
+base <- "https://www.googleapis.com/youtube/v3/"
+key <-  "AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs"
+resource_type <- "videos"
+filter <- "id"
+filter_id <- videos_to_analyze
+# filter_id <- "rZfCO3Jxb5E,OjQcBuEo7WE"  # creare una variabile che contiene tutti i playlistId e usare purrr::map_df per passarla
+part <- "statistics"
+# part <- "contentDetails"
+# part <- "fileDetails"
+# part <- "id"
+# part <- "liveStreamingDetails"
+# part <- "localizations"
+# part <- "player"
+# part <- "processingDetails"
+# part <- "recordingDetails"
+# part <- "snippet"
+# part <- "statistics"
+# part <- "status"
+# part <- "suggestions"
+# part <- "topicDetails"
+topn <- 50
+
+# Function get_channel_playlists
+get_videos <- function(base, key, filter, filter_id, part, topn) {
+  
+api_params <- 
+str_c(str_glue("key=", key), 
+               str_glue(filter, filter_id, .sep = "="),
+               str_glue("part=", part),
+               str_glue("maxResults=", topn),
+               sep = "&")
+
+api_call <- paste0(base, resource_type, "?", api_params)
+
+api_result <- httr::GET(api_call)
+
+json_result <- httr::content(api_result, "text", encoding="UTF-8")
+
+# Process the raw data into a data frame
+json <- fromJSON(json_result, flatten = T)  # vedere se esiste il flatten anche con il package rjson
+as.data.frame(json)
+  
+}
+
+videos <- get_videos(base, key, filter, filter_id, part, topn) %>% 
+  janitor::clean_names()
+```
+
+
+names(channels)  
+# vedere se esiste il flatten anche con il package rjson
+
+
+channels$items_content_details_related_playlists_uploads
+
+
+
+
+
+```{r}
+# Playlist info using 'contentDetails.relatedPlaylists.uploads' as our Playlist ID
+
+# playlist_id <- channel.df$contentDetails.relatedPlaylists.uploads
+```
+
+
+
+
+
+
+

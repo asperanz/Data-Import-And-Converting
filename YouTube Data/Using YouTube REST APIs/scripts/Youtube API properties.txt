@@ -1,0 +1,68 @@
+**** YOUTUBE API PROPERTIES ****
+
+* resource_type <- "playlists"
+
+part <- "contentDetails"
+part <- "id"
+part <- "localizations"
+part <- "player"
+part <- "snippet"
+part <- "status"
+
+
+Variables to take in consideration
+
+- contentDetails
+items.id, items.contentDetails.itemCount
+
+- player
+items.id, items.player.embedHtml
+
+- snippet
+pageInfo.totalResults, 
+items.kind, 
+items.id, 
+items.snippet.publishedAt,
+items.snippet.channelId,
+items.snippet.title,
+items.snippet.description,
+items.snippet.channelTitle
+
+- status
+items.id, items.status.privacyStatus
+
+
+------------------------------------------------------------------------------------------
+* resource_type <- "playlistItems"
+
+part <- "contentDetails"
+part <- "id"
+part <- "snippet"
+part <- "status"
+
+Variables to take in consideration
+
+- contentDetails
+items.id, items.contentDetails.videoId, items.contentDetails.videoPublishedAt
+
+- snippet
+items_id, 
+items_snippet_published_at,
+items_snippet_channel_id,
+items_snippet_title,
+items_snippet_description,
+items_snippet_channel_title,
+items_snippet_playlist_id,
+items_snippet_position,
+items_snippet_resource_id_video_id,
+page_info_total_results
+
+- status
+items_status_privacy_status
+
+
+
+
+
+
+

@@ -1,0 +1,38 @@
+---
+title: "Get YouTube data using vosonSML"
+author: "Alessandro Speranza"
+date: "1/20/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cash = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(vosonSML)
+```
+
+```{r}
+myAPIKey <- "AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs"
+youtubeAuth <- Authenticate("youtube", apiKey = myAPIKey)
+```
+
+
+```{r}
+videoIDs <- vosonSML::GetYoutubeVideoIDs("https://www.youtube.com/watch?v=eplD0ETmqcg&ab_channel=AlessandroSperanza")
+```
+
+```{r}
+# it doesn't work
+youtubeData <- youtubeAuth %>% 
+  Collect(videoIDs = videos, writeToFile = FALSE, verbose = FALSE)
+```
+
+```{r}
+# it works, but doesn't give me the data I want
+youtubeData <- Authenticate("youtube",
+apiKey = myAPIKey) %>% Collect(videoIDs = videoIDs) %>% Create('actor')
+```
+
