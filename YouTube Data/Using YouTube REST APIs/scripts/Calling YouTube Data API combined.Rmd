@@ -130,7 +130,7 @@ library(ggplot2)
 library(plotly)
 
 ggplotly(ggplot(videos_final, aes(x = date, y = views)) +
-  geom_line())
+  geom_line(color = "dark green"))
 ```
 
 # Plotting the views history - highcharter
