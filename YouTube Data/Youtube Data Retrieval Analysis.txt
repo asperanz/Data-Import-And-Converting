@@ -27,7 +27,7 @@ IMPORTANTE! NON riesco ad evidenziare nomi, descrizioni, etc
 
 
 --------------------------------------------------
-Youtube Data API v3 -- LAST UNDER INVESTIGATION
+Youtube Data API v3
 
 Con la mia chiave posso vedere NON solo il mio canale ma anche altri canali!!!
 https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=UCeLHszkByNZtPKcaVXOCOQQ&fields=items(contentDetails%2Cid%2Csnippet(country%2Cdescription%2Ctitle)%2Cstatistics%2Cstatus)%2CnextPageToken%2CpageInfo%2CprevPageToken%2CtokenPagination&key=AIzaSyCviXCt3rQPfDaNvuFIaWCE24gNx7q0Dfs 
@@ -38,14 +38,15 @@ IMPORTANTE! Riesco ad evidenziare nomi, descrizioni, etc
 
 
 --------------------------------------------------
-YouTube Analytics and Reporting APIs - Uso la direttamente la function httr::GET
+YouTube Analytics and Reporting APIs - Uso direttamente la function httr::GET
 
-IMPORTANTE! NON riesco ad evidenziare nomi, descrizioni, etc
+IMPORTANTE! 
+
+1. YouTube Analytics API: Retrieves your YouTube Analytics data 
+   YouTube Reporting API: Schedules reporting jobs containing your YouTube Analytics data and downloads the resulting bulk…
+   ->>> per cui le due APIs tirano giu gli stessi dati ma in modalita' diverse
+
+2. NON riesco ad evidenziare nomi, descrizioni, etc
 
 
---> X DOMANI 
-Vedere se riesco a tirare fuori anche dati storici da Youtube Data API v3
-ΑΤΤΕΝΖΙΟΝΕ! Questa API supporta anche OAuth 2.0, per cui provare usando questa sola autenticazione a fondere info della Analytics API
-
-Trovare anche il file con gli esempi di tuber su quello che si puo' fare
-D:\PC3\Operation Ultra\09 - R\18 - Blog, Practice & Projects\Data Import & Converting (DI&C)\YouTube Data\Using tuber package\scripts\tuber functions examples.R
+ΑΤΤΕΝΖΙΟΝΕ! Questa API supporta anche OAuth 2.0
